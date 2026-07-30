@@ -49,7 +49,10 @@ ALLOWED_RECEIPT_EXTENSIONS = {"png", "jpg", "jpeg", "webp", "pdf"}
 
 def allowed_receipt_file(filename):
     return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_RECEIPT_EXTENSIONS
-app.config["SQLALCHEMY_DATABASE_URI"] = "sqlite:///database.db"
+database_url = os.environ.get("DATABASE_URL", "sqlite:///database.db")
+if database_url.startswith("postgres://"):
+    database_url = database_url.replace("postgres://", "postgresql://", 1)
+app.config["SQLALCHEMY_DATABASE_URI"] = database_url
 app.config["SECRET_KEY"] = os.environ.get("SECRET_KEY", "dev-secret-change-this")
 db.init_app(app)
 

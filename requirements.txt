@@ -6,3 +6,4 @@ Flask-Login
 reportlab   
 qrcode[pil]
 gunicorn
+psycopg2-binary
