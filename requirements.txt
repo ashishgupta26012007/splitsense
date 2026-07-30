@@ -5,3 +5,4 @@ Flask-SQLAlchemy
 Flask-Login
 reportlab   
 qrcode[pil]
+gunicorn
