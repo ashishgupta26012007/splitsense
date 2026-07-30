@@ -253,7 +253,7 @@ def _call_one_model(model_id: str, system_prompt: str, user_prompt: str) -> str:
     }
     body = {
         "model": model_id,
-        "max_tokens": 2000,
+        "max_tokens": 3000,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
