@@ -74,12 +74,11 @@ API_KEY = os.environ.get("OPENROUTER_API_KEY")
 
 
 _default_fallback_models = [
-    "openrouter/free",  
     "meta-llama/llama-3.3-70b-instruct:free",
-    "qwen/qwen3-coder:free",
-    "openai/gpt-oss-120b:free",
     "google/gemma-3-27b-it:free",
+    "qwen/qwen3-coder:free",
     "deepseek/deepseek-chat-v3-0324:free",
+    "openai/gpt-oss-120b:free",
 ]
 
 _single_model_override = os.environ.get("OPENROUTER_MODEL")
@@ -253,7 +252,7 @@ def _call_one_model(model_id: str, system_prompt: str, user_prompt: str) -> str:
     }
     body = {
         "model": model_id,
-        "max_tokens": 3000,
+        "max_tokens": 1500,
         "messages": [
             {"role": "system", "content": system_prompt},
             {"role": "user", "content": user_prompt},
