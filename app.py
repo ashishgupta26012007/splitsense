@@ -69,16 +69,14 @@ with app.app_context():
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger("splitsense")
 
-OPENROUTER_URL = "https://openrouter.ai/api/v1/chat/completions"
-API_KEY = os.environ.get("OPENROUTER_API_KEY")
+OPENROUTER_URL = "https://api.groq.com/openai/v1/chat/completions"
+API_KEY = os.environ.get("GROQ_API_KEY")
 
 
 _default_fallback_models = [
-    "meta-llama/llama-3.3-70b-instruct:free",
-    "google/gemma-3-27b-it:free",
-    "qwen/qwen3-coder:free",
-    "deepseek/deepseek-chat-v3-0324:free",
-    "openai/gpt-oss-120b:free",
+    "llama-3.3-70b-versatile",
+    "llama-3.1-8b-instant",
+    "gemma2-9b-it",
 ]
 
 _single_model_override = os.environ.get("OPENROUTER_MODEL")
@@ -247,8 +245,6 @@ def _call_one_model(model_id: str, system_prompt: str, user_prompt: str) -> str:
     headers = {
         "Authorization": f"Bearer {API_KEY}",
         "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:5000",
-        "X-Title": "SplitSense",
     }
     body = {
         "model": model_id,
@@ -317,9 +313,9 @@ def call_llm(system_prompt: str, user_prompt: str) -> str:
             raise 
 
     raise UpstreamError(
-        "All the configured free models are currently unavailable on OpenRouter. "
-        "Please check https://openrouter.ai/models (filter by 'free') for a currently "
-        "active model id and set OPENROUTER_MODEL in your .env file to it.",
+        "All the configured Groq models are currently unavailable. "
+        "Please check https://console.groq.com/docs/models for a currently "
+        "active model id and update your model list.",
         502,
     )
 
@@ -735,12 +731,11 @@ def settle():
     if validation_error:
         return jsonify({"ok": False, "error": validation_error}), 400
 
-    # --- 2. Make sure we actually have an API key configured ---
     if not API_KEY:
-        logger.error("OPENROUTER_API_KEY is not set.")
+        logger.error("GROQ_API_KEY is not set.")
         return jsonify({
             "ok": False,
-            "error": "The server isn't configured with an OpenRouter API key. Add OPENROUTER_API_KEY to your .env file and restart the server."
+            "error": "The server isn't configured with a Groq API key. Add GROQ_API_KEY to your .env file and restart the server."
         }), 500
 
     try:
