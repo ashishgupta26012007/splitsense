@@ -1,133 +1,341 @@
-# SplitSense
+# 💸 SplitSense
 
-SplitSense is an expense-settling agent for roommates and groups.
-You describe expenses in plain English, and it returns:
+SplitSense is an AI-powered expense-settling application for roommates, trips, families, and groups.
 
-1. A structured expense summary.
-2. A minimum-transaction settlement plan.
-3. Friendly reminder messages ready to send.
+Instead of manually calculating who owes whom, users simply describe expenses in plain English, and SplitSense automatically:
 
-## Agentic 4-step pipeline
+- 📝 Extracts structured expense details
+- 🧮 Calculates balances
+- 💰 Generates the minimum number of transactions
+- 💬 Creates friendly reminder messages
 
-SplitSense now uses a clear multi-step flow instead of one combined LLM call:
+---
 
-1. **Step 1 (LLM parse only)**
-   - Parses raw text into `expense_summary` entries only:
-     `description`, `paid_by`, `amount`, `split_between`.
-   - If payer/amount are present but split participants are unclear,
-     it returns a friendly clarification error instead of guessing.
+# ✨ Features
 
-2. **Step 2 (pure Python compute)**
-   - Computes per-person net balances with real arithmetic.
-   - Runs greedy debt simplification (max-creditor vs max-debtor) to produce
-     the settlement plan.
+- 🤖 AI-powered expense parsing
+- 💵 Minimum transaction settlement algorithm
+- 👥 Group management
+- 📅 Weekly & Monthly expense tracking
+- 📊 Spending analytics
+- 🔥 Spending Heatmap
+- 🌙 Light & Dark mode
+- 📱 Clean responsive UI
 
-3. **Step 3 (Python verification)**
-   - Verifies the settlement mathematically against net balances and transfer
-     volume from original expenses.
-   - Retries compute+verify once if verification fails.
+---
 
-4. **Step 4 (LLM reminders only)**
-   - Drafts short, friendly one-to-two-sentence reminders from the verified
-     settlement plan.
+# 🧠 Agentic 4-Step Pipeline
 
-During each request, backend logs print these stages in order so the flow is
-visible in live demos.
+SplitSense follows a multi-agent workflow instead of relying on a single LLM response.
 
-## Architecture (text diagram)
+## Step 1 - LLM Parsing
 
-```text
-User text input
-   |
-   v
-[Step 1: LLM parser via OpenRouter]
-   |  -> structured expense_summary OR clarification error
-   v
-[Step 2: Python compute_balances + compute_settlement]
-   |
-   v
-[Step 3: Python verify_settlement (+ one retry on failure)]
-   |
-   v
-[Step 4: LLM reminder drafter via OpenRouter]
-   |
-   v
-Frontend cards: Expense summary | Settlement plan | Reminders
+The user enters expenses in natural language.
+
+Example:
+
+> Raj paid ₹4500 for hotel, split between Raj, Aman and Simran.
+
+The LLM extracts:
+
+- Description
+- Paid By
+- Amount
+- Split Between
+
+If participants are unclear, SplitSense asks for clarification instead of guessing.
+
+---
+
+## Step 2 - Balance Computation
+
+Pure Python performs:
+
+- Balance calculation
+- Net amount per user
+- Greedy debt simplification
+
+This produces the minimum possible number of payments.
+
+---
+
+## Step 3 - Verification
+
+The settlement is mathematically verified.
+
+Checks include:
+
+- Net balances
+- Transaction correctness
+- Total money conservation
+
+If verification fails, computation is retried once automatically.
+
+---
+
+## Step 4 - Reminder Generation
+
+The verified settlement is passed back to the LLM to generate friendly reminder messages.
+
+Example:
+
+> Hey Aman! Just a reminder that you owe Raj ₹1500 for the Goa trip 😊
+
+---
+
+# 🏗 Architecture
+
+```
+User Input
+      │
+      ▼
+LLM Expense Parser
+      │
+      ▼
+Python Balance Calculator
+      │
+      ▼
+Settlement Verification
+      │
+      ▼
+LLM Reminder Generator
+      │
+      ▼
+Frontend Dashboard
 ```
 
-## Project structure
+---
+
+# 📂 Project Structure
 
 ```text
-splitsense/
-|- app.py                 Flask backend + agent pipeline
-|- templates/
-|  |- index.html          Frontend page
-|- static/
-|  |- style.css           Styling
-|  |- script.js           Frontend logic + progress indicator
-|- .env.example           Template for API key and model override
-|- requirements.txt       Python dependencies
-|- README.md
+SplitSense/
+│
+├── app.py                  # Main Flask application
+├── models.py               # Database models
+├── requirements.txt        # Project dependencies
+├── Procfile                # Deployment configuration
+├── README.md               # Project documentation
+├── .env.example            # Environment variables template
+├── .gitignore              # Git ignored files
+│
+├── assets/                 # Screenshots used in README
+│   ├── signup.png
+│   ├── home-light.png
+│   ├── home-dark.png
+│   ├── groups.png
+│   ├── weekly.png
+│   ├── monthly.png
+│   ├── payments.png
+│   └── heatmap.png
+│
+├── static/
+│   ├── receipts/           # Uploaded receipt images
+│   ├── myphoto.jpg
+│   ├── script.js           # Frontend logic
+│   ├── style.css           # Application styling
+│   └── theme.js            # Light/Dark mode toggle
+│
+└── templates/
+    ├── index.html          # Home page
+    ├── signup.html         # User registration
+    ├── login.html          # User login
+    ├── groups.html         # Group management
+    ├── group_detail.html   # Individual group details
+    ├── weekly.html         # Weekly analytics
+    ├── monthly.html        # Monthly analytics
+    ├── payments.html       # Settlement & payments
+    ├── heatmap.html        # Spending heatmap
+    ├── about.html          # About page
+    └── contact.html        # Contact page
 ```
 
-## Setup
+---
 
-### 1) Install dependencies
+# ⚙ Installation
 
-Create and activate a virtual environment, then install requirements:
+## Clone Repository
+
+```bash
+git clone https://github.com/ashishgupta26012007/splitsense.git
+cd splitsense
+```
+
+## Create Virtual Environment
 
 ```bash
 python -m venv venv
+```
+
+Windows
+
+```bash
 venv\Scripts\activate
+```
+
+Linux / macOS
+
+```bash
+source venv/bin/activate
+```
+
+## Install Dependencies
+
+```bash
 pip install -r requirements.txt
 ```
 
-### 2) Configure OpenRouter
+---
 
-Create `.env` from `.env.example`, then set your key:
+# 🔑 Configure OpenRouter
 
-```bash
-copy .env.example .env
+Create a `.env` file.
+
+```env
+OPENROUTER_API_KEY=your_api_key_here
 ```
 
-In `.env`:
+(Optional)
 
-```text
-OPENROUTER_API_KEY=sk-or-v1-...your-real-key...
-```
-
-Optional override (single fixed model):
-
-```text
+```env
 OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
 ```
 
-If `OPENROUTER_MODEL` is not set, SplitSense automatically tries a fallback
-list of free models in order.
+---
 
-### 3) Run
+# ▶ Run
 
 ```bash
 python app.py
 ```
 
-Open http://localhost:5000
+Visit
 
-## Usage note (important)
+```
+http://localhost:5000
+```
 
-For each expense, explicitly name everyone in that split, not only the payer.
+---
 
-Example:
-`Raj paid 4500 for hotel, split between Raj, Simran, and Aman. Simran paid 900 for lunch, split between Simran and Aman.`
+# 📸 Application Screenshots
 
-## Production-quality safeguards retained
+## 1️⃣ User Registration
 
-- OpenRouter integration with free-model fallback list.
-- `OPENROUTER_MODEL` single-model override support.
-- Friendly handling for missing API key, auth errors, rate limits, network
-  errors, timeouts, model unavailability, and upstream failures.
-- Pre-LLM input validation for empty/gibberish-like text.
-- JSON extraction/parsing retry logic and response-shape validation for LLM
-  steps.
-- Clean card-based frontend with loading spinner and explicit 4-step progress
-  indicator during processing.
+![Signup](assets/signup.png)
+
+Users can quickly create an account by choosing a username and password before accessing SplitSense.
+
+---
+
+## 2️⃣ Home Dashboard
+
+### ☀ Light Theme
+
+![Home Light](assets/home-light.png)
+
+The home dashboard allows users to add participants, record expenses, and execute the complete AI-powered settlement pipeline.
+
+### 🌙 Dark Theme
+
+![Home Dark](assets/home-dark.png)
+
+SplitSense also supports Dark Mode for a cleaner and more comfortable user experience.
+
+---
+
+## 3️⃣ Group Management
+
+![Groups](assets/groups.png)
+
+Create multiple groups for trips, flats, office teams, friends, or family and manage expenses separately.
+
+---
+
+## 4️⃣ Weekly Analytics
+
+![Weekly](assets/weekly.png)
+
+Track spending over the last seven days with filters, expense summaries, and category-wise analysis.
+
+---
+
+## 5️⃣ Monthly Dashboard
+
+![Monthly](assets/monthly.png)
+
+View monthly spending, category-wise charts, and overall expense statistics.
+
+---
+
+## 6️⃣ Payments
+
+![Payments](assets/payments.png)
+
+Pending settlements can be marked as paid while maintaining a complete payment history.
+
+---
+
+## 7️⃣ Spending Heatmap
+
+![Heatmap](assets/heatmap.png)
+
+Visualize your spending activity across the past 365 days with an interactive contribution heatmap.
+
+---
+
+# 🛡 Error Handling
+
+SplitSense gracefully handles:
+
+- Missing API key
+- Invalid JSON responses
+- Network failures
+- Model unavailability
+- API rate limits
+- Timeouts
+- Empty or invalid input
+
+---
+
+# 🚀 Tech Stack
+
+### Frontend
+
+- HTML
+- CSS
+- JavaScript
+
+### Backend
+
+- Python
+- Flask
+
+### AI
+
+- OpenRouter API
+- Llama Models
+
+### Algorithms
+
+- Greedy Settlement
+- Balance Verification
+
+---
+
+# 🌟 Future Improvements
+
+- Authentication
+- OCR Receipt Scanner
+- Voice Expense Input
+- WhatsApp Reminder Integration
+- Mobile App
+- Real-time Group Collaboration
+- Expense Categories with AI Insights
+
+---
+
+# 👨‍💻 Developed By
+
+**Ashish Gupta**
+
+Built as an AI-powered expense settlement application using Flask, OpenRouter, Python, and modern frontend technologies.
