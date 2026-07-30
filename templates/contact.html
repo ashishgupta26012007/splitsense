@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact - SplitSense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="{{ url_for('index') }}" class="topnav-link">Home</a>
+      <a href="{{ url_for('groups_list') }}" class="topnav-link">Groups</a>
+      <a href="{{ url_for('weekly_summary') }}" class="topnav-link">Weekly</a>
+      <a href="{{ url_for('monthly_summary') }}" class="topnav-link">Monthly</a>
+      <a href="{{ url_for('payments') }}" class="topnav-link">Payments</a>
+      <a href="{{ url_for('about') }}" class="topnav-link">About</a>
+      <a href="{{ url_for('contact') }}" class="topnav-link">Contact</a>
+      <a href="{{ url_for('logout') }}" class="topnav-link topnav-link--muted">Logout</a>
+    </div>
+    <div class="topnav-actions">
+      <a href="{{ url_for('spending_heatmap') }}" class="icon-nav-btn" title="Spending Heatmap">📊</a>
+      <button id="theme-toggle" class="theme-toggle" type="button">🌙</button>
+    </div>
+  </nav>
+
+  <div class="page page--wide">
+
+    
+    <section class="contact-hero fade-up">
+      <div class="hero-mark">
+        <span class="hero-mark-dot"></span>
+        <span class="hero-mark-line"></span>
+        <span class="hero-mark-dot hero-mark-dot--end"></span>
+      </div>
+      <h1 class="contact-hero-heading">Get in Touch</h1>
+      <p class="contact-hero-desc">Questions, feature requests, collaboration, or bug reports - I'd love to hear from you.</p>
+
+      <div class="card contact-profile-card fade-up lift-on-hover">
+        <div class="hex-frame">
+          <div class="hex-frame-inner">
+              <img src="{{ url_for('static', filename='myphoto.jpg') }}" alt="Ashish Gupta" style="width:100%; height:100%; object-fit:cover;">
+          </div>
+        </div>
+
+        <div class="contact-profile-info">
+          <h2 class="contact-name">Ashish Gupta</h2>
+          <p class="contact-role">BTech Student · Builder of SplitSense</p>
+          <p class="section-sub" style="margin-top:10px; margin-bottom:14px;">
+            I build small autonomous tools that solve real, everyday friction -
+            SplitSense started as a way to never do settlement math with roommates again.
+          </p>
+          <div class="contact-mini-links">
+            <span>theashiraj26@gmail.com</span>
+            <span>github.com/ashishgupta26012007</span>
+            <span>linkedin.com/in/ashish-gupta-1a738a315</span>
+          </div>
+
+          <div class="contact-cta-row">
+            <a href="mailto:theashiraj26@gmail.com" class="btn-primary">Contact Me</a>
+            <a href="https://github.com/ashishgupta26012007" target="_blank" class="btn-secondary">View GitHub</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="skill-chip-row fade-up">
+        <span class="skill-chip">Python</span>
+        <span class="skill-chip">Flask</span>
+        <span class="skill-chip">SQLAlchemy</span>
+        <span class="skill-chip">LLMs</span>
+        <span class="skill-chip">AI Agents</span>
+        <span class="skill-chip">JavaScript</span>
+        <span class="skill-chip">SQL</span>
+        <span class="skill-chip">REST APIs</span>
+      </div>
+    </section>
+
+    
+    <section class="card contact-about-card fade-up">
+      <h2 class="section-title" style="font-size:24px;"><span class="section-index">•</span> About Me</h2>
+      <p class="section-sub" style="margin-bottom:0; line-height:1.7;">
+        I'm a BTech student who likes building things that quietly do the
+        annoying parts of life for you. SplitSense is my exploration of
+        autonomous agents - combining an LLM's language understanding with
+        verified Python logic, so nothing is ever trusted blindly. Every
+        settlement is calculated, checked, and re-checked before it reaches you.
+      </p>
+    </section>
+
+   
+    <section class="card contact-details-card fade-up lift-on-hover">
+      <h2 class="section-title" style="font-size:20px;"><span class="section-index">•</span> Contact Details</h2>
+      <div class="contact-details-grid">
+        <div class="contact-detail-item">
+          <span class="contact-detail-icon">✉️</span>
+          <div>
+            <div class="contact-detail-label">Email</div>
+            <div class="contact-detail-value">theashiraj26@gmail.com</div>
+          </div>
+        </div>
+        <div class="contact-detail-item">
+          <span class="contact-detail-icon">🐙</span>
+          <div>
+            <div class="contact-detail-label">GitHub</div>
+            <div class="contact-detail-value">github.com/ashishgupta26012007</div>
+          </div>
+        </div>
+        <div class="contact-detail-item">
+          <span class="contact-detail-icon">💼</span>
+          <div>
+            <div class="contact-detail-label">LinkedIn</div>
+            <div class="contact-detail-value">linkedin.com/in/ashish-gupta-1a738a315</div>
+          </div>
+        </div>
+        <div class="contact-detail-item">
+          <span class="contact-detail-icon">📍</span>
+          <div>
+            <div class="contact-detail-label">Location</div>
+            <div class="contact-detail-value">India</div>
+          </div>
+        </div>
+        <div class="contact-detail-item">
+          <span class="contact-detail-icon">🟢</span>
+          <div>
+            <div class="contact-detail-label">Availability</div>
+            <div class="contact-detail-value">Open to opportunities</div>
+          </div>
+        </div>
+        <div class="contact-detail-item">
+          <span class="contact-detail-icon">📄</span>
+          <div>
+            <div class="contact-detail-label">Resume</div>
+            <div class="contact-detail-value"><a href="#" style="color:var(--mint);">Download</a></div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <footer class="footer">
+      <span>Made with ❤️ for SplitSense</span>
+    </footer>
+  </div>
+
+<script>
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        entry.target.classList.add("is-visible");
+        observer.unobserve(entry.target);
+      }
+    });
+  }, { threshold: 0.1 });
+
+  document.querySelectorAll(".fade-up").forEach((el) => observer.observe(el));
+</script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+</body>
+</html>

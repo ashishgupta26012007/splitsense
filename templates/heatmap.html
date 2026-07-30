@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Spending Heatmap - SplitSense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="{{ url_for('index') }}" class="topnav-link">Home</a>
+      <a href="{{ url_for('groups_list') }}" class="topnav-link">Groups</a>
+      <a href="{{ url_for('weekly_summary') }}" class="topnav-link">Weekly</a>
+      <a href="{{ url_for('monthly_summary') }}" class="topnav-link">Monthly</a>
+      <a href="{{ url_for('payments') }}" class="topnav-link">Payments</a>
+      <a href="{{ url_for('about') }}" class="topnav-link">About</a>
+      <a href="{{ url_for('contact') }}" class="topnav-link">Contact</a>
+      <a href="{{ url_for('logout') }}" class="topnav-link topnav-link--muted">Logout</a>
+    </div>
+
+    <div class="topnav-actions">
+      <a href="{{ url_for('spending_heatmap') }}" class="icon-nav-btn" title="Spending Heatmap">📊</a>
+      <button id="theme-toggle" class="theme-toggle" type="button">🌙</button>
+    </div>
+    
+  </nav>
+
+  <div class="page">
+    <header class="hero">
+      <div class="hero-mark">
+        <span class="hero-mark-dot"></span>
+        <span class="hero-mark-line"></span>
+        <span class="hero-mark-dot hero-mark-dot--end"></span>
+      </div>
+      <h1 class="wordmark">Spending Heatmap</h1>
+      <p class="tagline">A year of your spending activity, at a glance.</p>
+    </header>
+
+    <main class="stack">
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">•</span> Last 365 days</h2>
+        <div class="heatmap-scroll-wrap">
+          <div id="heatmap-grid" class="heatmap-grid"></div>
+        </div>
+        <div class="heatmap-legend">
+          <span>Less</span>
+          <span class="heatmap-cell heatmap-cell--0"></span>
+          <span class="heatmap-cell heatmap-cell--1"></span>
+          <span class="heatmap-cell heatmap-cell--2"></span>
+          <span class="heatmap-cell heatmap-cell--3"></span>
+          <span class="heatmap-cell heatmap-cell--4"></span>
+          <span>More</span>
+        </div>
+        <div id="heatmap-tooltip" class="heatmap-tooltip" hidden></div>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>SplitSense</span>
+    </footer>
+  </div>
+
+<script>
+  const dailyTotals = {{ daily_totals|tojson }};
+  const maxDayTotal = {{ max_day_total|tojson }};
+  const startDate = new Date("{{ start_date }}");
+  const endDate = new Date("{{ end_date }}");
+
+  function getIntensityLevel(amount) {
+    if (!amount || amount <= 0) return 0;
+    if (maxDayTotal === 0) return 0;
+    const ratio = amount / maxDayTotal;
+    if (ratio > 0.75) return 4;
+    if (ratio > 0.5) return 3;
+    if (ratio > 0.25) return 2;
+    return 1;
+  }
+
+  function formatDateKey(d) {
+    return d.toISOString().split("T")[0];
+  }
+
+  const grid = document.getElementById("heatmap-grid");
+  const tooltip = document.getElementById("heatmap-tooltip");
+
+  const gridStart = new Date(startDate);
+  gridStart.setDate(gridStart.getDate() - gridStart.getDay());
+
+  const totalDays = Math.ceil((endDate - gridStart) / (1000 * 60 * 60 * 24)) + 1;
+  const totalWeeks = Math.ceil(totalDays / 7);
+
+  grid.style.gridTemplateColumns = `repeat(${totalWeeks}, 12px)`;
+
+  for (let week = 0; week < totalWeeks; week++) {
+    for (let day = 0; day < 7; day++) {
+      const cellDate = new Date(gridStart);
+      cellDate.setDate(cellDate.getDate() + week * 7 + day);
+
+      const cell = document.createElement("div");
+
+      if (cellDate > endDate) {
+        cell.className = "heatmap-cell heatmap-cell--empty";
+      } else {
+        const dateKey = formatDateKey(cellDate);
+        const amount = dailyTotals[dateKey] || 0;
+        const level = getIntensityLevel(amount);
+        cell.className = `heatmap-cell heatmap-cell--${level}`;
+        cell.style.gridColumn = week + 1;
+        cell.style.gridRow = day + 1;
+
+        cell.addEventListener("mouseenter", (e) => {
+          tooltip.hidden = false;
+          tooltip.textContent = amount > 0
+            ? `₹${amount.toFixed(2)} on ${cellDate.toDateString()}`
+            : `No spending on ${cellDate.toDateString()}`;
+          const rect = e.target.getBoundingClientRect();
+          tooltip.style.left = `${rect.left + window.scrollX}px`;
+          tooltip.style.top = `${rect.top + window.scrollY - 32}px`;
+        });
+        cell.addEventListener("mouseleave", () => {
+          tooltip.hidden = true;
+        });
+      }
+
+      grid.appendChild(cell);
+    }
+  }
+</script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+</body>
+</html>

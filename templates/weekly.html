@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Weekly Summary - SplitSense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="{{ url_for('index') }}" class="topnav-link">Home</a>
+      <a href="{{ url_for('groups_list') }}" class="topnav-link">Groups</a>
+      <a href="{{ url_for('weekly_summary') }}" class="topnav-link">Weekly</a>
+      <a href="{{ url_for('monthly_summary') }}" class="topnav-link">Monthly</a>
+      <a href="{{ url_for('payments') }}" class="topnav-link">Payments</a>
+      <a href="{{ url_for('about') }}" class="topnav-link">About</a>
+      <a href="{{ url_for('contact') }}" class="topnav-link">Contact</a>
+      <a href="{{ url_for('logout') }}" class="topnav-link topnav-link--muted">Logout</a>
+    </div>
+
+    <div class="topnav-actions">
+      <a href="{{ url_for('spending_heatmap') }}" class="icon-nav-btn" title="Spending Heatmap">📊</a>
+      <button id="theme-toggle" class="theme-toggle" type="button">🌙</button>
+    </div>
+  
+  </nav>
+
+  <div class="page">
+    <header class="hero">
+      <div class="hero-mark">
+        <span class="hero-mark-dot"></span>
+        <span class="hero-mark-line"></span>
+        <span class="hero-mark-dot hero-mark-dot--end"></span>
+      </div>
+      <h1 class="wordmark">Your Week</h1>
+      <p class="tagline">Everything you've settled and logged in the last 7 days.</p>
+      <section class="card">
+  <h2 class="section-title"><span class="section-index">•</span> Filter & search</h2>
+  <form method="GET" action="{{ url_for('weekly_summary') }}" class="filter-form">
+    <input type="text" name="search" placeholder="Search by description..." value="{{ search_query }}" class="filter-search-input">
+    <div class="pill-select">
+      <a href="{{ url_for('weekly_summary', search=search_query) }}" class="pill-option-link {{ 'is-active' if not selected_category }}">All</a>
+      {% for cat in categories %}
+        <a href="{{ url_for('weekly_summary', category=cat, search=search_query) }}" class="pill-option-link {{ 'is-active' if selected_category == cat }}">{{ cat }}</a>
+      {% endfor %}
+    </div>
+    <button type="submit" class="btn-secondary" id="filter-apply-btn" style="margin-top:10px;">Apply</button>
+  </form>
+</section>
+
+{% if category_totals %}
+<section class="card">
+  <h2 class="section-title"><span class="section-index">•</span> By category</h2>
+  <div class="daily-list">
+    {% for cat, total in category_totals.items() %}
+      <div class="daily-row">
+        <span class="daily-day">{{ cat }}</span>
+        <span class="daily-amount">₹{{ "%.2f"|format(total) }}</span>
+      </div>
+    {% endfor %}
+  </div>
+</section>
+{% endif %}
+    </header>
+
+    <main class="stack">
+
+      <section class="stat-row">
+        <div class="stat-box">
+          <div class="stat-value">₹{{ "%.2f"|format(total_spent) }}</div>
+          <div class="stat-label">Total spent (7 days)</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-value">{{ expense_count }}</div>
+          <div class="stat-label">Expenses logged</div>
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">01</span> Daily breakdown</h2>
+        <div class="daily-list">
+          {% if daily_totals %}
+            {% for day, total in daily_totals.items() %}
+              <div class="daily-row">
+                <span class="daily-day">{{ day }}</span>
+                <span class="daily-amount">₹{{ "%.2f"|format(total) }}</span>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-note">No expenses logged this week yet.</div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">02</span> All expenses this week</h2>
+        <div class="summary-list">
+          {% if expenses %}
+            {% for e in expenses %}
+              <div class="summary-item" id="expense-{{ e.id }}">
+  <div class="summary-item-main">
+    <div class="summary-item-desc" id="desc-display-{{ e.id }}">{{ e.description }}</div>
+
+    <div class="edit-expense-form" id="edit-form-{{ e.id }}" hidden>
+      <input type="text" class="edit-desc-input" value="{{ e.description }}" placeholder="Description">
+      <input type="number" class="edit-amount-input" value="{{ e.amount }}" placeholder="Amount" min="0" step="0.01">
+      <select class="edit-category-select">
+        {% for cat in categories %}
+          <option value="{{ cat }}" {{ "selected" if cat == e.category else "" }}>{{ cat }}</option>
+        {% endfor %}
+      </select>
+      <button class="text-action-btn save-edit-btn" data-expense-id="{{ e.id }}">Save</button>
+      <button class="text-action-btn cancel-edit-btn" data-expense-id="{{ e.id }}">Cancel</button>
+    </div>
+    <div class="summary-item-detail">
+      <span class="category-badge">{{ e.category }}</span>
+      Paid by {{ e.paid_by }} · Split with {{ e.split_with }} · {{ e.date.strftime("%d %b %Y") if e.date else "" }}
+    </div>
+    <div class="receipt-row" data-expense-id="{{ e.id }}">
+      {% if e.receipt_filename %}
+        <a href="{{ url_for('static', filename='receipts/' + e.receipt_filename) }}" target="_blank" class="receipt-link">📎 View receipt</a>
+      {% else %}
+        <label class="receipt-upload-label">
+          📎 Attach receipt
+          <input type="file" class="receipt-file-input" accept="image/*,.pdf" data-expense-id="{{ e.id }}" hidden>
+        </label>
+      {% endif %}
+    </div>
+  </div>
+  <div class="summary-item-amount">
+    <div>₹{{ "%.2f"|format(e.amount) }}</div>
+    <div class="expense-action-btns">
+      <button class="text-action-btn edit-expense-btn" data-expense-id="{{ e.id }}">Edit</button>
+      <button class="text-action-btn text-action-btn--danger delete-expense-btn" data-expense-id="{{ e.id }}">Delete</button>
+    </div>
+  </div>
+</div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-note">Nothing here yet — settle some expenses first!</div>
+          {% endif %}
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <span>SplitSense</span>
+    </footer>
+  </div>
+
+  </script>
+
+<script>
+  document.querySelectorAll(".receipt-file-input").forEach((input) => {
+    input.addEventListener("change", async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
+
+      const expenseId = input.dataset.expenseId;
+      const formData = new FormData();
+      formData.append("receipt", file);
+
+      const row = input.closest(".receipt-row");
+      row.innerHTML = "Uploading...";
+
+      try {
+        const response = await fetch(`/api/upload-receipt/${expenseId}`, {
+          method: "POST",
+          body: formData,
+        });
+        const data = await response.json();
+
+        if (data.ok) {
+          row.innerHTML = `<a href="${data.receipt_url}" target="_blank" class="receipt-link">📎 View receipt</a>`;
+        } else {
+          row.innerHTML = `<span style="color: var(--rust); font-size: 12px;">${data.error}</span>`;
+        }
+      } catch (err) {
+        row.innerHTML = `<span style="color: var(--rust); font-size: 12px;">Upload failed.</span>`;
+      }
+    });
+  });
+</script>
+
+<script>
+  document.querySelectorAll(".edit-expense-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.expenseId;
+      document.getElementById(`desc-display-${id}`).hidden = true;
+      document.getElementById(`edit-form-${id}`).hidden = false;
+    });
+  });
+
+  document.querySelectorAll(".cancel-edit-btn").forEach((btn) => {
+    btn.addEventListener("click", () => {
+      const id = btn.dataset.expenseId;
+      document.getElementById(`desc-display-${id}`).hidden = false;
+      document.getElementById(`edit-form-${id}`).hidden = true;
+    });
+  });
+
+  document.querySelectorAll(".save-edit-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const id = btn.dataset.expenseId;
+      const form = document.getElementById(`edit-form-${id}`);
+      const description = form.querySelector(".edit-desc-input").value.trim();
+      const amount = form.querySelector(".edit-amount-input").value;
+      const category = form.querySelector(".edit-category-select").value;
+
+      const response = await fetch(`/api/expense/${id}/edit`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ description, amount, category }),
+      });
+      const data = await response.json();
+
+      if (data.ok) {
+        location.reload();
+      } else {
+        alert(data.error || "Couldn't save changes.");
+      }
+    });
+  });
+
+  document.querySelectorAll(".delete-expense-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      if (!confirm("Delete this expense? This cannot be undone.")) return;
+
+      const id = btn.dataset.expenseId;
+      const response = await fetch(`/api/expense/${id}/delete`, { method: "POST" });
+      const data = await response.json();
+
+      if (data.ok) {
+        document.getElementById(`expense-${id}`).remove();
+      } else {
+        alert(data.error || "Couldn't delete expense.");
+      }
+    });
+  });
+
+  document.querySelector(".filter-form").addEventListener("submit", () => {
+  const btn = document.getElementById("filter-apply-btn");
+  btn.textContent = "Loading...";
+  btn.disabled = true;
+});
+</script>
+
+  <script src="{{ url_for('static', filename='theme.js') }}"></script>
+</body>
+</html>

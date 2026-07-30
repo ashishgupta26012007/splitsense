@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Payments - SplitSense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="{{ url_for('index') }}" class="topnav-link">Home</a>
+      <a href="{{ url_for('groups_list') }}" class="topnav-link">Groups</a>
+      <a href="{{ url_for('weekly_summary') }}" class="topnav-link">Weekly</a>
+      <a href="{{ url_for('monthly_summary') }}" class="topnav-link">Monthly</a>
+      <a href="{{ url_for('payments') }}" class="topnav-link">Payments</a>
+      <a href="{{ url_for('about') }}" class="topnav-link">About</a>
+      <a href="{{ url_for('contact') }}" class="topnav-link">Contact</a>
+      <a href="{{ url_for('logout') }}" class="topnav-link topnav-link--muted">Logout</a>
+    </div>
+
+    <div class="topnav-actions">
+      <a href="{{ url_for('spending_heatmap') }}" class="icon-nav-btn" title="Spending Heatmap">📊</a>
+      <button id="theme-toggle" class="theme-toggle" type="button">🌙</button>
+    </div>
+    
+  </nav>
+
+  <div class="page">
+    <header class="hero">
+      <div class="hero-mark">
+        <span class="hero-mark-dot"></span>
+        <span class="hero-mark-line"></span>
+        <span class="hero-mark-dot hero-mark-dot--end"></span>
+      </div>
+      <h1 class="wordmark">Payments</h1>
+      <p class="tagline">Mark settlements as paid whenever they actually happen.</p>
+    </header>
+
+    <main class="stack">
+
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">01</span> Pending</h2>
+        <div class="settlement-list" id="pending-list">
+          {% if pending %}
+            {% for t in pending %}
+              <div class="flow-row" data-txn-id="{{ t.id }}">
+                <div class="flow-name flow-name--from">{{ t.payer }}</div>
+                <div class="flow-track">
+                  <div class="flow-dot"></div>
+                  <div class="flow-amount">₹{{ "%.2f"|format(t.amount) }}</div>
+                </div>
+                <div class="flow-name flow-name--to">{{ t.receiver }}</div>
+                <button class="mark-paid-btn" data-txn-id="{{ t.id }}">Mark as Paid</button>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-note">Nothing pending - you're all settled up! 🎉</div>
+          {% endif %}
+        </div>
+      </section>
+
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">02</span> Paid history</h2>
+        <div class="settlement-list">
+          {% if paid %}
+            {% for t in paid %}
+              <div class="flow-row is-paid">
+                <div class="flow-name flow-name--from">{{ t.payer }}</div>
+                <div class="flow-track">
+                  <div class="flow-amount">₹{{ "%.2f"|format(t.amount) }}</div>
+                </div>
+                <div class="flow-name flow-name--to">{{ t.receiver }}</div>
+                <button class="mark-paid-btn" data-txn-id="{{ t.id }}">✓ Paid</button>
+              </div>
+            {% endfor %}
+          {% else %}
+            <div class="empty-note">No payments marked as paid yet.</div>
+          {% endif %}
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <span>SplitSense</span>
+    </footer>
+  </div>
+
+<script>
+  document.querySelectorAll(".mark-paid-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const txnId = btn.dataset.txnId;
+      btn.disabled = true;
+
+      try {
+        const response = await fetch(`/api/mark-paid/${txnId}`, { method: "POST" });
+        const data = await response.json();
+        if (data.ok) {
+          location.reload();
+        }
+      } catch (err) {
+        btn.disabled = false;
+      }
+    });
+  });
+</script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+</body>
+</html>

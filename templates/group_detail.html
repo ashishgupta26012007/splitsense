@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>{{ group.name }} - SplitSense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="{{ url_for('index') }}" class="topnav-link">Home</a>
+      <a href="{{ url_for('groups_list') }}" class="topnav-link">Groups</a>
+      <a href="{{ url_for('weekly_summary') }}" class="topnav-link">Weekly</a>
+      <a href="{{ url_for('monthly_summary') }}" class="topnav-link">Monthly</a>
+      <a href="{{ url_for('payments') }}" class="topnav-link">Payments</a>
+      <a href="{{ url_for('about') }}" class="topnav-link">About</a>
+      <a href="{{ url_for('contact') }}" class="topnav-link">Contact</a>
+      <a href="{{ url_for('logout') }}" class="topnav-link topnav-link--muted">Logout</a>
+    </div>
+
+    <div class="topnav-actions">
+      <a href="{{ url_for('spending_heatmap') }}" class="icon-nav-btn" title="Spending Heatmap">📊</a>
+      <button id="theme-toggle" class="theme-toggle" type="button">🌙</button>
+    </div>
+  
+  </nav>
+
+  <div class="page">
+    <header class="hero">
+      <div class="group-hero-avatar">{{ group.avatar_emoji }}</div>
+      <h1 class="wordmark" style="font-size:32px;">{{ group.name }}</h1>
+      <p class="tagline">{{ group.description or "No description yet." }}</p>
+      <div class="group-hero-meta">{{ group.category }} · {{ members|length }} member{{ 's' if members|length != 1 else '' }}</div>
+    </header>
+
+    <main class="stack">
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="auth-flash">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <section class="card">
+  <h2 class="section-title"><span class="section-index">01</span> Invite people</h2>
+  <p class="section-sub">Anyone with this link can join {{ group.name }}.</p>
+  <div class="invite-row">
+    <input type="text" readonly value="{{ invite_url }}" id="invite-link-input">
+    <button class="btn-secondary" id="copy-invite-btn" type="button">Copy</button>
+  </div>
+
+  <div class="qr-toggle-row">
+    <button class="text-action-btn" id="qr-toggle-btn" type="button">📱 Show QR code</button>
+  </div>
+
+  <div id="qr-code-container" class="qr-code-container" hidden>
+    <img src="data:image/png;base64,{{ qr_code_data }}" alt="Invite QR code" class="qr-code-image">
+    <p class="qr-code-caption">Scan to join {{ group.name }}</p>
+  </div>
+</section>
+
+
+      {% if my_role in ("owner", "admin") and pending_requests %}
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">!</span> Pending join requests</h2>
+        <div class="member-list" id="pending-requests-list">
+          {% for req in pending_requests %}
+            <div class="member-row" data-request-id="{{ req.id }}">
+              <div class="member-info">
+                <span class="member-name">{{ req.user.username }}</span>
+                <span class="role-badge" style="background:var(--rust-soft); color:var(--rust);">pending</span>
+              </div>
+              <div class="member-actions">
+                <button class="text-action-btn" data-req-action="approve" data-request-id="{{ req.id }}">Approve</button>
+                <button class="text-action-btn text-action-btn--danger" data-req-action="reject" data-request-id="{{ req.id }}">Reject</button>
+              </div>
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+      {% endif %}
+
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">02</span> Members</h2>
+        <div class="member-list">
+
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">02</span> Members</h2>
+        <div class="member-list">
+          {% for m in members %}
+            <div class="member-row">
+              <div class="member-info">
+                <span class="member-name">{{ m.user.username }}</span>
+                <span class="role-badge role-badge--{{ m.role }}">{{ m.role }}</span>
+              </div>
+              {% if my_role in ("owner", "admin") and m.role != "owner" and m.user_id != current_user.id %}
+                <div class="member-actions">
+                  {% if my_role == "owner" %}
+                    <button class="text-action-btn" data-action="transfer" data-member-id="{{ m.id }}">Make Owner</button>
+                  {% endif %}
+                  <button class="text-action-btn text-action-btn--danger" data-action="remove" data-member-id="{{ m.id }}">Remove</button>
+                </div>
+              {% endif %}
+            </div>
+          {% endfor %}
+        </div>
+      </section>
+
+      <section class="card">
+  <h2 class="section-title"><span class="section-index">•</span> Current balances</h2>
+  <p class="section-sub">Live totals across every expense logged in this group.</p>
+  <div class="balance-list">
+    {% if running_balances %}
+      {% for name, balance in running_balances.items() %}
+        {% if balance|abs > 0.01 %}
+          <div class="balance-row">
+            <span class="balance-name">{{ name }}</span>
+            {% if balance > 0 %}
+              <span class="balance-amount balance-amount--positive">is owed ₹{{ "%.2f"|format(balance) }}</span>
+            {% else %}
+              <span class="balance-amount balance-amount--negative">owes ₹{{ "%.2f"|format(-balance) }}</span>
+            {% endif %}
+          </div>
+        {% endif %}
+      {% endfor %}
+      {% if running_balances.values()|map('abs')|max < 0.01 %}
+        <div class="empty-note">Everyone's settled up! 🎉</div>
+      {% endif %}
+    {% else %}
+      <div class="empty-note">No expenses logged in this group yet.</div>
+    {% endif %}
+  </div>
+</section>
+
+
+
+      <section class="card">
+  <h2 class="section-title"><span class="section-index">03</span> Settle an expense</h2>
+  <p class="section-sub">Add expenses for this group — settlement uses the same 4-step engine.</p>
+
+  <div class="people-input-row">
+    <select id="group-expense-payer"></select>
+    <input type="number" id="group-expense-amount" placeholder="Amount" min="0" step="0.01">
+  </div>
+  <input type="text" id="group-expense-desc" placeholder="Description (e.g. Dinner)" style="width:100%; margin-top:10px; padding:10px 14px; border-radius:10px; border:1px solid var(--paper-line); background:var(--paper); font-family:var(--font-body); font-size:14px; color:var(--ink);">
+
+  <div class="expense-split" id="group-split-checkboxes" style="margin-top:12px;"></div>
+
+  <button id="group-add-expense-btn" class="btn-ghost" type="button" style="margin-top:14px;">+ Add this expense</button>
+  <div id="group-pending-expenses" class="expense-rows" style="margin-top:14px;"></div>
+
+  <button id="group-settle-btn" class="btn-primary" style="margin-top:16px; width:100%;">Settle it up</button>
+  <div id="group-status-area" class="status-area" hidden></div>
+
+  <div id="group-results" hidden style="margin-top:20px;">
+    <h3 class="section-title" style="font-size:16px;">Settlement plan</h3>
+    <div id="group-settlement-list" class="settlement-list"></div>
+    <h3 class="section-title" style="font-size:16px; margin-top:18px;">Reminders</h3>
+    <div id="group-reminders-list" class="reminders-list"></div>
+  </div>
+</section>
+
+<section class="card">
+  <h2 class="section-title"><span class="section-index">04</span> Activity feed</h2>
+  <div class="activity-list">
+    {% set combined = [] %}
+    {% for e in recent_expenses %}
+      {% set _ = combined.append({"type": "expense", "obj": e, "time": e.created_at}) %}
+    {% endfor %}
+    {% for t in recent_transactions %}
+      {% set _ = combined.append({"type": "transaction", "obj": t, "time": t.created_at}) %}
+    {% endfor %}
+    {% set sorted_combined = combined|sort(attribute="time", reverse=True) %}
+
+    {% if sorted_combined %}
+      {% for item in sorted_combined %}
+        {% if item.type == "expense" %}
+          <div class="activity-item">
+            <span class="activity-icon">💸</span>
+            <div class="activity-text">
+              <strong>{{ item.obj.paid_by }}</strong> paid ₹{{ "%.2f"|format(item.obj.amount) }} for {{ item.obj.description }}
+              <div class="activity-time">{{ item.obj.created_at.strftime("%d %b, %I:%M %p") }}</div>
+            </div>
+          </div>
+        {% else %}
+          <div class="activity-item">
+            <span class="activity-icon">{{ "✅" if item.obj.is_paid else "⏳" }}</span>
+            <div class="activity-text">
+              <strong>{{ item.obj.payer }}</strong> owes <strong>{{ item.obj.receiver }}</strong> ₹{{ "%.2f"|format(item.obj.amount) }}
+              {% if item.obj.is_paid %}<span style="color:var(--mint);">· Paid</span>{% endif %}
+              <div class="activity-time">{{ item.obj.created_at.strftime("%d %b, %I:%M %p") }}</div>
+            </div>
+          </div>
+        {% endif %}
+      {% endfor %}
+    {% else %}
+      <div class="empty-note">No activity yet - add your first expense above.</div>
+    {% endif %}
+  </div>
+</section>
+
+    </main>
+
+    <footer class="footer">
+      <span>SplitSense</span>
+    </footer>
+  </div>
+
+<script>
+  const groupId = {{ group.id }};
+
+  document.getElementById("copy-invite-btn").addEventListener("click", async () => {
+    const input = document.getElementById("invite-link-input");
+    await navigator.clipboard.writeText(input.value);
+    const btn = document.getElementById("copy-invite-btn");
+    const original = btn.textContent;
+    btn.textContent = "Copied!";
+    setTimeout(() => { btn.textContent = original; }, 1500);
+  });
+
+document.getElementById("qr-toggle-btn").addEventListener("click", () => {
+    const container = document.getElementById("qr-code-container");
+    const btn = document.getElementById("qr-toggle-btn");
+    const isHidden = container.hidden;
+
+    container.hidden = !isHidden;
+    btn.textContent = isHidden ? "📱 Hide QR code" : "📱 Show QR code";
+  });
+
+  document.querySelectorAll(".text-action-btn").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const action = btn.dataset.action;
+      const memberId = btn.dataset.memberId;
+      const endpoint = action === "remove"
+        ? `/groups/${groupId}/remove-member/${memberId}`
+        : `/groups/${groupId}/transfer-ownership/${memberId}`;
+
+      if (action === "remove" && !confirm("Remove this member from the group?")) return;
+      if (action === "transfer" && !confirm("Transfer group ownership to this member?")) return;
+
+      const response = await fetch(endpoint, { method: "POST" });
+      const data = await response.json();
+
+      if (data.ok) {
+        location.reload();
+      } else {
+        alert(data.error || "Something went wrong.");
+      }
+    });
+  });
+
+
+document.querySelectorAll("[data-req-action]").forEach((btn) => {
+    btn.addEventListener("click", async () => {
+      const action = btn.dataset.reqAction;
+      const requestId = btn.dataset.requestId;
+      const endpoint = action === "approve"
+        ? `/groups/${groupId}/approve-request/${requestId}`
+        : `/groups/${groupId}/reject-request/${requestId}`;
+
+      const response = await fetch(endpoint, { method: "POST" });
+      const data = await response.json();
+
+      if (data.ok) {
+        location.reload();
+      } else {
+        alert(data.error || "Something went wrong.");
+      }
+    });
+  });
+
+  
+
+  const memberNames = {{ member_names|tojson }};
+
+  const payerSelect = document.getElementById("group-expense-payer");
+  memberNames.forEach((name) => {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    payerSelect.appendChild(opt);
+  });
+
+  const splitCheckboxesEl = document.getElementById("group-split-checkboxes");
+  memberNames.forEach((name) => {
+    const label = document.createElement("label");
+    label.className = "split-checkbox-item is-checked";
+    label.innerHTML = `<input type="checkbox" checked value="${name}"><span>${name}</span>`;
+    label.querySelector("input").addEventListener("change", (e) => {
+      label.classList.toggle("is-checked", e.target.checked);
+    });
+    splitCheckboxesEl.appendChild(label);
+  });
+
+  let groupPendingExpenses = [];
+
+  document.getElementById("group-add-expense-btn").addEventListener("click", () => {
+    const payer = payerSelect.value;
+    const amount = document.getElementById("group-expense-amount").value;
+    const desc = document.getElementById("group-expense-desc").value.trim();
+    const checkedNames = Array.from(splitCheckboxesEl.querySelectorAll("input:checked")).map(cb => cb.value);
+
+    if (!amount || Number(amount) <= 0 || !desc || checkedNames.length === 0) {
+      alert("Please fill in amount, description, and select at least one person to split with.");
+      return;
+    }
+
+    groupPendingExpenses.push({ payer, amount, desc, split: checkedNames });
+    document.getElementById("group-expense-amount").value = "";
+    document.getElementById("group-expense-desc").value = "";
+    renderGroupPendingExpenses();
+  });
+
+  function renderGroupPendingExpenses() {
+    const container = document.getElementById("group-pending-expenses");
+    container.innerHTML = groupPendingExpenses.map((exp, idx) => `
+      <div class="expense-row">
+        <div class="expense-row-top">
+          <span class="expense-static-label">${exp.payer} paid ₹${exp.amount} for ${exp.desc}</span>
+          <button type="button" class="remove-expense-btn" onclick="removeGroupExpense(${idx})">&times;</button>
+        </div>
+      </div>
+    `).join("");
+  }
+
+  window.removeGroupExpense = function(idx) {
+    groupPendingExpenses.splice(idx, 1);
+    renderGroupPendingExpenses();
+  };
+
+  document.getElementById("group-settle-btn").addEventListener("click", async () => {
+    if (groupPendingExpenses.length === 0) {
+      alert("Add at least one expense first.");
+      return;
+    }
+
+    function joinNames(names) {
+      if (names.length === 1) return names[0];
+      if (names.length === 2) return `${names[0]} and ${names[1]}`;
+      return `${names.slice(0, -1).join(", ")}, and ${names[names.length - 1]}`;
+    }
+
+    const text = groupPendingExpenses
+      .map(exp => `${exp.payer} paid ${exp.amount} for ${exp.desc}, split between ${joinNames(exp.split)}.`)
+      .join(" ");
+
+    const statusArea = document.getElementById("group-status-area");
+    statusArea.hidden = false;
+    statusArea.className = "status-area loading";
+    statusArea.innerHTML = `<span class="spinner"></span><span>Settling up...</span>`;
+
+    const resultsEl = document.getElementById("group-results");
+    resultsEl.hidden = false;
+    document.getElementById("group-settlement-list").innerHTML = `
+      <div class="skeleton-card"><div class="skeleton skeleton-line skeleton-line--medium"></div></div>
+      <div class="skeleton-card"><div class="skeleton skeleton-line skeleton-line--medium"></div></div>
+    `;
+    document.getElementById("group-reminders-list").innerHTML = "";
+
+    try {
+      const response = await fetch("/api/settle", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text, group_id: groupId }),
+      });
+      const data = await response.json();
+
+      if (!data.ok) {
+        statusArea.className = "status-area error";
+        statusArea.textContent = data.error || "Something went wrong.";
+        return;
+      }
+
+      statusArea.hidden = true;
+      groupPendingExpenses = [];
+      renderGroupPendingExpenses();
+
+      const resultsEl = document.getElementById("group-results");
+      resultsEl.hidden = false;
+
+      const settlementListEl = document.getElementById("group-settlement-list");
+      settlementListEl.innerHTML = data.settlement_plan.map(p => `
+        <div class="flow-row">
+          <div class="flow-name flow-name--from">${p.from}</div>
+          <div class="flow-track"><div class="flow-amount">₹${p.amount.toFixed(2)}</div></div>
+          <div class="flow-name flow-name--to">${p.to}</div>
+        </div>
+      `).join("") || `<div class="empty-note">Everyone's even!</div>`;
+
+      const remindersListEl = document.getElementById("group-reminders-list");
+      remindersListEl.innerHTML = data.reminders.map(r => `
+        <div class="reminder-item"><span class="reminder-text">${r}</span></div>
+      `).join("");
+
+      setTimeout(() => location.reload(), 2500);
+
+    } catch (err) {
+      statusArea.className = "status-area error";
+      statusArea.textContent = "Couldn't reach the server.";
+    }
+  });
+</script>
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+</body>
+</html>

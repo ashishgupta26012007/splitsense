@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Groups - SplitSense</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}" />
+</head>
+<body>
+  <nav class="topnav">
+    <div class="topnav-inner">
+      <a href="{{ url_for('index') }}" class="topnav-link">Home</a>
+      <a href="{{ url_for('groups_list') }}" class="topnav-link">Groups</a>
+      <a href="{{ url_for('weekly_summary') }}" class="topnav-link">Weekly</a>
+      <a href="{{ url_for('monthly_summary') }}" class="topnav-link">Monthly</a>
+      <a href="{{ url_for('payments') }}" class="topnav-link">Payments</a>
+      <a href="{{ url_for('about') }}" class="topnav-link">About</a>
+      <a href="{{ url_for('contact') }}" class="topnav-link">Contact</a>
+      <a href="{{ url_for('logout') }}" class="topnav-link topnav-link--muted">Logout</a>
+    </div>
+
+    <div class="topnav-actions">
+      <a href="{{ url_for('spending_heatmap') }}" class="icon-nav-btn" title="Spending Heatmap">📊</a>
+      <button id="theme-toggle" class="theme-toggle" type="button">🌙</button>
+    </div>
+  
+  </nav>
+
+  <div class="page">
+    <header class="hero">
+      <div class="hero-mark">
+        <span class="hero-mark-dot"></span>
+        <span class="hero-mark-line"></span>
+        <span class="hero-mark-dot hero-mark-dot--end"></span>
+      </div>
+      <h1 class="wordmark">Your Groups</h1>
+      <p class="tagline">Trips, flats, or friend circles - each with its own ledger.</p>
+    </header>
+
+    <main class="stack">
+
+      {% with messages = get_flashed_messages() %}
+        {% if messages %}
+          {% for message in messages %}
+            <div class="auth-flash">{{ message }}</div>
+          {% endfor %}
+        {% endif %}
+      {% endwith %}
+
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">+</span> Create a group</h2>
+        <form method="POST" action="{{ url_for('create_group') }}" class="group-create-form">
+          <label class="card-label" for="group-name">Group name</label>
+          <input type="text" id="group-name" name="name" placeholder="e.g. Goa Trip 2026" required maxlength="80">
+
+          <label class="card-label" style="margin-top:14px;" for="group-desc">Description (optional)</label>
+          <input type="text" id="group-desc" name="description" placeholder="What's this group for?" maxlength="200">
+
+          <label class="card-label" style="margin-top:14px;">Category</label>
+          <div class="pill-select" id="category-select">
+            {% for cat in categories %}
+              <label class="pill-option">
+                <input type="radio" name="category" value="{{ cat }}" {% if loop.first %}checked{% endif %}>
+                <span>{{ cat }}</span>
+              </label>
+            {% endfor %}
+          </div>
+
+          <label class="card-label" style="margin-top:14px;">Avatar</label>
+          <div class="emoji-select">
+            {% for emoji in emojis %}
+              <label class="emoji-option">
+                <input type="radio" name="emoji" value="{{ emoji }}" {% if loop.first %}checked{% endif %}>
+                <span>{{ emoji }}</span>
+              </label>
+            {% endfor %}
+          </div>
+
+          <button type="submit" class="btn-primary" style="margin-top:20px; width:100%;">Create Group</button>
+        </form>
+      </section>
+
+      <section class="card">
+        <h2 class="section-title"><span class="section-index">•</span> Your groups</h2>
+        <div class="group-list">
+          {% if groups %}
+            {% for group in groups %}
+              <a href="{{ url_for('group_detail', group_id=group.id) }}" class="group-card">
+                <div class="group-card-avatar">{{ group.avatar_emoji }}</div>
+                <div class="group-card-main">
+                  <div class="group-card-name">{{ group.name }}</div>
+                  <div class="group-card-meta">{{ group.category }} · {{ group.members|length }} member{{ 's' if group.members|length != 1 else '' }}</div>
+                </div>
+              </a>
+            {% endfor %}
+          {% else %}
+            <div class="empty-note">No groups yet - create your first one above.</div>
+          {% endif %}
+        </div>
+      </section>
+
+    </main>
+
+    <footer class="footer">
+      <span>SplitSense</span>
+    </footer>
+  </div>
+
+<script src="{{ url_for('static', filename='theme.js') }}"></script>
+</body>
+</html>
