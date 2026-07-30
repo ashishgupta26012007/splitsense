@@ -1,5 +1,7 @@
 # 💸 SplitSense
 
+🔗 **Live Demo:** [https://splitsense-u71u.onrender.com](https://splitsense-u71u.onrender.com)
+
 SplitSense is an AI-powered expense-settling application for roommates, trips, families, and groups.
 
 Instead of manually calculating who owes whom, users simply describe expenses in plain English, and SplitSense automatically:
@@ -187,18 +189,13 @@ pip install -r requirements.txt
 
 ---
 
-# 🔑 Configure OpenRouter
+# 🔑 Configure Groq
 
 Create a `.env` file.
 
 ```env
-OPENROUTER_API_KEY=your_api_key_here
-```
-
-(Optional)
-
-```env
-OPENROUTER_MODEL=meta-llama/llama-3.3-70b-instruct:free
+GROQ_API_KEY=your_groq_api_key_here
+SECRET_KEY=your_flask_secret_key_here
 ```
 
 ---
@@ -312,8 +309,8 @@ SplitSense gracefully handles:
 
 ### AI
 
-- OpenRouter API
-- Llama Models
+- Groq API
+- Llama Models (via Groq)
 
 ### Algorithms
 
