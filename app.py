@@ -261,7 +261,7 @@ def _call_one_model(model_id: str, system_prompt: str, user_prompt: str) -> str:
     }
 
     try:
-        response = requests.post(OPENROUTER_URL, headers=headers, json=body, timeout=45)
+        response = requests.post(OPENROUTER_URL, headers=headers, json=body, timeout=25)
     except requests.exceptions.ConnectionError:
         raise UpstreamError("Couldn't reach OpenRouter - please check your internet connection and try again.", 503)
     except requests.exceptions.Timeout:
