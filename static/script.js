@@ -618,7 +618,16 @@ function stopProgressUI() {
     clearInterval(progressTimer);
     progressTimer = null;
   }
-  progressStepsEl.hidden = true;
+
+  const steps = progressStepsEl.querySelectorAll(".progress-step");
+  steps.forEach((stepEl) => {
+    stepEl.classList.remove("is-active");
+    stepEl.classList.add("is-complete");
+  });
+
+  setTimeout(() => {
+    progressStepsEl.hidden = true;
+  }, 400);
 }
 
 function updateProgressStep(activeIndex) {
